@@ -33,7 +33,10 @@ def load_model(configpath,weightspath):
     net = cv2.dnn.readNetFromDarknet(configpath, weightspath)
     return net
 
-def get_predection(image,net,LABELS):
+def get_predection(net,LABELS):
+    imagePath = "/inputfolder/1.jpg"
+    path = get_image(imagePath)
+    image = cv2.imread('x01.jpg')
     (H, W) = image.shape[:2]
 
     # determine only the *output* layer names that we need from YOLO
@@ -89,7 +92,7 @@ def get_predection(image,net,LABELS):
 
     # apply non-maxima suppression to suppress weak, overlapping bounding
     # boxes
-    idxs = cv2.dnn.NMSBoxes(confidences, confthres,
+    idxs = cv2.dnn.NMSBoxes(boxes, confidences, confthres,
                             nmsthres)
 
     # ensure at least one detection exists
@@ -105,8 +108,6 @@ def get_predection(image,net,LABELS):
     return image
 
 def main():
-    imagePath = "\inputfolder\1.jpg"
-    image = cv2.imread(get_image(imagePath))
     labelsPath = "\config\coco.names.txt"
     cfgpath = "\config\yolov3.cfg.txt"
     wpath = "\config\yolov3-tiny.weights"
@@ -114,7 +115,7 @@ def main():
     CFG = get_config(cfgpath)
     Weights = get_weights(wpath)
     nets = load_model(CFG,Weights)
-    res = get_predection(image,nets,Lables)
+    res = get_predection(nets,Lables)
 
 
 if __name__== "__main__":
