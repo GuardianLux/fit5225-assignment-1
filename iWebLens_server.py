@@ -23,6 +23,10 @@ def get_config(config_path):
     configPath = os.getcwd() + config_path
     return configPath
 
+def get_image(image_path):
+    imagePath = os.getcwd() + image_path
+    return imagePath
+
 def load_model(configpath,weightspath):
     # load our YOLO object detector trained on COCO dataset (80 classes)
     print("[INFO] loading YOLO from disk...")
@@ -52,6 +56,7 @@ def get_predection(image,net,LABELS):
 
     # initialize our lists of detected bounding boxes, confidences, and
     # class IDs, respectively
+    boxes = []
     confidences = []
     classIDs = []
 
@@ -70,10 +75,15 @@ def get_predection(image,net,LABELS):
             # filter out weak predictions by ensuring the detected
             # probability is greater than the minimum probability
             if confidence > confthres:
+                box = detection[0:4] * np.array([W, H, W, H])
+                (centerX, centerY, width, height) = box.astype("int")
                 # scale the bounding box coordinates back relative to the
                 # size of the image, keeping in mind that YOLO actually
+                x = int(centerX - (width / 2))
+                y = int(centerY - (height / 2))
                 # returns the center (x, y)-coordinates of the bounding
                 # box followed by the boxes' width and height
+                boxes.append([x, y, int(width), int(height)])
                 confidences.append(float(confidence))
                 classIDs.append(classID)
 
@@ -87,20 +97,24 @@ def get_predection(image,net,LABELS):
         # loop over the indexes we are keeping
         for i in idxs.flatten():
             # extract the bounding box coordinates
+            (x, y) = (boxes[i][0], boxes[i][1])
+            (w, h) = (boxes[i][2], boxes[i][3])
+            print(boxes)
             print(classIDs)
-    return classIDs
+    print(classIDs)
+    return image
 
 def main():
-        # load our input image and grab its spatial dimensions
-    image = cv2.imread("\inputfolder/000000007454.jpg")
-    labelsPath="\config\coco.names"
-    cfgpath="\config\yolov3.cfg"
-    wpath="\config\yolov3-tiny.weights"
-    Lables=get_labels(labelsPath)
-    CFG=get_config(cfgpath)
-    Weights=get_weights(wpath)
-    nets=load_model(CFG,Weights)
-    res=get_predection(image,nets,Lables)
+    imagePath = "\inputfolder\1.jpg"
+    image = cv2.imread(get_image(imagePath))
+    labelsPath = "\config\coco.names.txt"
+    cfgpath = "\config\yolov3.cfg.txt"
+    wpath = "\config\yolov3-tiny.weights"
+    Lables = get_labels(labelsPath)
+    CFG = get_config(cfgpath)
+    Weights = get_weights(wpath)
+    nets = load_model(CFG,Weights)
+    res = get_predection(image,nets,Lables)
 
 
 if __name__== "__main__":
