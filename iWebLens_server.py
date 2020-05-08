@@ -4,7 +4,7 @@ import time
 import cv2
 import os
 
-confthres=0.5
+confthres=0.3
 nmsthres=0.1
 
 def get_labels(labels_path):
@@ -27,30 +27,34 @@ def get_image(image_path):
     imagePath = os.getcwd() + image_path
     return imagePath
 
+def get_colors(LABELS):
+    # initialize a list of colors to represent each possible class label
+    np.random.seed(42)
+    colors = np.random.randint(0, 255, size=(len(LABELS), 3),dtype="uint8")
+    return colors
+
 def load_model(configpath,weightspath):
     # load our YOLO object detector trained on COCO dataset (80 classes)
     print("[INFO] loading YOLO from disk...")
-    net = cv2.dnn.readNetFromDarknet(configpath, weightspath)
+    net = cv2.dnn.readNet(configpath, weightspath)
     return net
 
-def get_predection(net,LABELS):
-    imagePath = "/inputfolder/1.jpg"
-    path = get_image(imagePath)
-    image = cv2.imread('x01.jpg')
+def get_predection(image,net,LABELS,COLORS):
     (H, W) = image.shape[:2]
 
     # determine only the *output* layer names that we need from YOLO
     ln = net.getLayerNames()
-    ln = [ln[i[0] - 1] for i in net.getUnconnectedOutLayers()]
+    output_layers = [ln[i[0] - 1] for i in net.getUnconnectedOutLayers()]
 
     # construct a blob from the input image and then perform a forward
     # pass of the YOLO object detector, giving us our bounding boxes and
     # associated probabilities
-    blob = cv2.dnn.blobFromImage(image, 1 / 255.0, (416, 416),
+    blob = cv2.dnn.blobFromImage(image, 0.00392, (416, 416),(0,0,0),
                                  swapRB=True, crop=False)
+
     net.setInput(blob)
     start = time.time()
-    layerOutputs = net.forward(ln)
+    layerOutputs = net.forward(output_layers)
     print(layerOutputs)
     end = time.time()
 
@@ -58,6 +62,8 @@ def get_predection(net,LABELS):
     print("[INFO] YOLO took {:.6f} seconds".format(end - start))
 
     # initialize our lists of detected bounding boxes, confidences, and
+    # class IDs, respectively
+     # initialize our lists of detected bounding boxes, confidences, and
     # class IDs, respectively
     boxes = []
     confidences = []
@@ -78,14 +84,20 @@ def get_predection(net,LABELS):
             # filter out weak predictions by ensuring the detected
             # probability is greater than the minimum probability
             if confidence > confthres:
-                box = detection[0:4] * np.array([W, H, W, H])
-                (centerX, centerY, width, height) = box.astype("int")
                 # scale the bounding box coordinates back relative to the
                 # size of the image, keeping in mind that YOLO actually
-                x = int(centerX - (width / 2))
-                y = int(centerY - (height / 2))
                 # returns the center (x, y)-coordinates of the bounding
                 # box followed by the boxes' width and height
+                box = detection[0:4] * np.array([W, H, W, H])
+                (centerX, centerY, width, height) = box.astype("int")
+
+                # use the center (x, y)-coordinates to derive the top and
+                # and left corner of the bounding box
+                x = int(centerX - (width / 2))
+                y = int(centerY - (height / 2))
+
+                # update our list of bounding box coordinates, confidences,
+                # and class IDs
                 boxes.append([x, y, int(width), int(height)])
                 confidences.append(float(confidence))
                 classIDs.append(classID)
@@ -102,20 +114,32 @@ def get_predection(net,LABELS):
             # extract the bounding box coordinates
             (x, y) = (boxes[i][0], boxes[i][1])
             (w, h) = (boxes[i][2], boxes[i][3])
+
+            # draw a bounding box rectangle and label on the image
+            color = [int(c) for c in COLORS[classIDs[i]]]
+            cv2.rectangle(image, (x, y), (x + w, y + h), color, 2)
+            text = "{}: {:.4f}".format(LABELS[classIDs[i]], confidences[i])
             print(boxes)
             print(classIDs)
-    print(classIDs)
+            cv2.putText(image, text, (x, y - 5), cv2.FONT_HERSHEY_SIMPLEX,0.5, color, 2)
     return image
-
+    
 def main():
-    labelsPath = "\config\coco.names.txt"
-    cfgpath = "\config\yolov3.cfg.txt"
-    wpath = "\config\yolov3-tiny.weights"
-    Lables = get_labels(labelsPath)
-    CFG = get_config(cfgpath)
-    Weights = get_weights(wpath)
-    nets = load_model(CFG,Weights)
-    res = get_predection(nets,Lables)
+    # load our input image and grab its spatial dimensions
+    image = cv2.imread("C:/Users/User/Desktop/FIT5225-assignment/inputfolder/000000426648.jpg")
+    labelsPath="/config/coco.names"
+    cfgpath="/config/yolov3.cfg"
+    wpath="/config/yolov3-tiny.weights"
+    Lables=get_labels(labelsPath)
+    CFG=get_config(cfgpath)
+    Weights=get_weights(wpath)
+    net=load_model(CFG,Weights)
+    Colors=get_colors(Lables)
+    res=get_predection(image,net,Lables,Colors)
+    # image=cv2.cvtColor(image,cv2.COLOR_BGR2RGB)
+    # show the output image
+    cv2.imshow("Image", res)
+    cv2.waitKey()
 
 
 if __name__== "__main__":
