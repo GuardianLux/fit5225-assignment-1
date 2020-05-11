@@ -4,11 +4,13 @@ import cv2
 import os
 from io import BytesIO
 from PIL import Image
+from collections import OrderedDict
 
-confthres = 0.3
+confthres = 0.4
 nmsthres = 0.1
 
 app = Flask(__name__)
+app.config["JSON_SORT_KEYS"] = False
 
 class Result:
     def __init__(self,label,confidence):
@@ -33,7 +35,20 @@ def load_model(configpath,weightspath):
     net = cv2.dnn.readNetFromDarknet(configpath, weightspath)
     return net
 
-def get_predection(image,net,labels):
+@app.route('/', methods=['POST'])
+def main():
+    i = request.files["image"].read()
+    image = Image.open(BytesIO(i))
+    npimg=np.array(image)
+    image=npimg.copy()
+    labelsPath="/config/coco.names"
+    cfgpath="/config/yolov3.cfg"
+    wpath="/config/yolov3-tiny.weights"
+    labels=get_labels(labelsPath)
+    CFG=get_config(cfgpath)
+    Weights=get_weights(wpath)
+    net=load_model(CFG,Weights)
+
     (H, W) = image.shape[:2]
 
     ln = net.getLayerNames()
@@ -74,8 +89,9 @@ def get_predection(image,net,labels):
                 # update our list of bounding box coordinates, confidences,
                 # and class IDs
                 boxes.append([x, y, int(width), int(height)])
-                confidences.append(float(confidence))
                 classIDs.append(classID)
+                confidences.append(float(confidence))
+                
 
     # apply non-maxima suppression to suppress weak, overlapping bounding
     # boxes
@@ -83,31 +99,16 @@ def get_predection(image,net,labels):
                             nmsthres)
 
     # ensure at least one detection exists
+    result = OrderedDict()
     arr = []
     if len(idxs) > 0:
         # loop over the indexes we are keeping
         for i in idxs.flatten():
-            item = labels[classIDs[i]], confidences[i]
-            arr.append(item)
-        result = arr
-    return result
+            result["Label"] = labels[classIDs[i]]
+            result["Accuracy"] = float("{:.2f}".format(confidences[i]*100))
+            arr.append(result)
 
-labelsPath="/config/coco.names"
-cfgpath="/config/yolov3.cfg"
-wpath="/config/yolov3-tiny.weights"
-Lables=get_labels(labelsPath)
-CFG=get_config(cfgpath)
-Weights=get_weights(wpath)
-nets=load_model(CFG,Weights)
-
-@app.route('/', methods=['POST'])
-def main():
-    i = request.files["image"].read()
-    image = Image.open(BytesIO(i))
-    npimg=np.array(image)
-    image=npimg.copy()
-    res=get_predection(image,nets,Lables)
-    return jsonify({"Result":res})
+    return jsonify({"Objects":arr})
 
 if __name__== "__main__":
   app.run()
