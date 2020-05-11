@@ -4,9 +4,9 @@ import cv2
 import os
 from io import BytesIO
 from PIL import Image
-from collections import OrderedDict
+from collections import defaultdict
 
-confthres = 0.4
+confthres = 0.5
 nmsthres = 0.1
 
 app = Flask(__name__)
@@ -99,14 +99,15 @@ def main():
                             nmsthres)
 
     # ensure at least one detection exists
-    result = OrderedDict()
+    objects = {}
     arr = []
     if len(idxs) > 0:
         # loop over the indexes we are keeping
         for i in idxs.flatten():
-            result["Label"] = labels[classIDs[i]]
-            result["Accuracy"] = float("{:.2f}".format(confidences[i]*100))
-            arr.append(result)
+            objects[int(i)] = {}
+            objects[int(i)]["Label"] = labels[classIDs[i]]
+            objects[int(i)]["Accuracy"] = float("{:.2f}".format(confidences[i]*100))
+            arr.append(objects[int(i)])
 
     return jsonify({"Objects":arr})
 
