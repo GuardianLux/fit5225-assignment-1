@@ -10,6 +10,7 @@ confthres = 0.5
 nmsthres = 0.1
 
 app = Flask(__name__)
+# Without this Json output is in the wrong order
 app.config["JSON_SORT_KEYS"] = False
 
 class Result:
@@ -17,6 +18,7 @@ class Result:
         self.label = label
         self.confidence = confidence
 
+# Functions to get paths of each config item, using os.getcwd makes the server easy to run without worrying about filepaths
 def get_labels(labels_path):
     lpath = os.getcwd() + labels_path
     labels = open(lpath).read().strip().split("\n")
@@ -31,12 +33,12 @@ def get_config(config_path):
     return configPath
 
 def load_model(configpath,weightspath):
-    print("[INFO] loading YOLO from disk...")
     net = cv2.dnn.readNetFromDarknet(configpath, weightspath)
     return net
 
 @app.route('/', methods=['POST'])
 def main():
+    # Read image being sent from client
     i = request.files["image"].read()
     image = Image.open(BytesIO(i))
     npimg=np.array(image)
