@@ -93,6 +93,7 @@ def main():
                 boxes.append([x, y, int(width), int(height)])
                 classIDs.append(classID)
                 confidences.append(float(confidence))
+                print(classIDs)
                 
 
     # apply non-maxima suppression to suppress weak, overlapping bounding
@@ -114,4 +115,4 @@ def main():
     return jsonify({"Objects":arr})
 
 if __name__== "__main__":
-  app.run()
+  app.run(host='0.0.0.0')
