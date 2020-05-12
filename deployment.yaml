@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: iweblens-server
+    labels:
+        app: iweblens-server
+spec:
+    replicas: 2
+    selector:
+        matchLabels:
+            app: iweblens-server
+    template:
+        metadata:
+            labels:
+                app: iweblens-server
+        spec:
+            containers:
+              - name: iweblens-server
+                image: iweblens_server:latest
+                ports:
+                - containerPort: 80
+                resources:
+                    limits:
+                        cpu: "0.5"
+                    requests:
+                        cpu: "0.5"
