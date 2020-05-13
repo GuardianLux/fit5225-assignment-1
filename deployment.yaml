@@ -2,10 +2,9 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
     name: iweblens-server
-    labels:
-        app: iweblens-server
+    namespace: iweblens-server
 spec:
-    replicas: 2
+    replicas: 1
     selector:
         matchLabels:
             app: iweblens-server
@@ -16,7 +15,8 @@ spec:
         spec:
             containers:
               - name: iweblens-server
-                image: iweblens_server:latest
+                image: guardianlux/iweblens-server:latest
+                imagePullPolicy: Always
                 ports:
                 - containerPort: 80
                 resources:
@@ -24,3 +24,4 @@ spec:
                         cpu: "0.5"
                     requests:
                         cpu: "0.5"
+                    

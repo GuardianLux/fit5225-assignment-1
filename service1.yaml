@@ -1,11 +1,11 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: iweblens-server
-  namespace: iweblens-server
+  name: iweblens
+  namespace: iweblens
 spec:
   selector:
-    app: iweblens-server
+    app: iweblens
   ports:
   - port: 8080
     protocol: TCP

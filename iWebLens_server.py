@@ -36,7 +36,7 @@ def load_model(configpath,weightspath):
     net = cv2.dnn.readNetFromDarknet(configpath, weightspath)
     return net
 
-@app.route('/', methods=['POST'])
+@app.route('/api/weblens', methods=['POST'])
 def main():
     # Read image being sent from client
     i = request.files["image"].read()
