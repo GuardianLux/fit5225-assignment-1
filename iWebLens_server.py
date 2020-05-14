@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, Response
+from flask import Flask, request, jsonify
 import numpy as np
 import cv2
 import os
@@ -7,7 +7,7 @@ from PIL import Image
 from collections import defaultdict
 
 # Thresholds for both confidence in detection and NMS
-confthres = 0.5
+confthres = 0.3
 nmsthres = 0.1
 
 app = Flask(__name__)
@@ -42,8 +42,7 @@ def main():
     # Read image being sent from client
     i = request.files["image"].read()
     image = Image.open(BytesIO(i))
-    npimg=np.array(image)
-    image=npimg.copy()
+    image=np.array(image)
     labelsPath="/config/coco.names"
     cfgpath="/config/yolov3.cfg"
     wpath="/config/yolov3-tiny.weights"
