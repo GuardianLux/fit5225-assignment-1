@@ -6,6 +6,7 @@ from io import BytesIO
 from PIL import Image
 from collections import defaultdict
 
+# Thresholds for both confidence in detection and NMS
 confthres = 0.5
 nmsthres = 0.1
 
@@ -73,39 +74,26 @@ def main():
             classID = np.argmax(scores)
             confidence = scores[classID]
 
-            # filter out weak predictions by ensuring the detected
-            # probability is greater than the minimum probability
             if confidence > confthres:
-                # scale the bounding box coordinates back relative to the
-                # size of the image, keeping in mind that YOLO actually
-                # returns the center (x, y)-coordinates of the bounding
-                # box followed by the boxes' width and height
+                # Scale detection box back to be relative to image size
                 box = detection[0:4] * np.array([W, H, W, H])
                 (centerX, centerY, width, height) = box.astype("int")
-
-                # use the center (x, y)-coordinates to derive the top and
-                # and left corner of the bounding box
+                # Find top left corner of box
                 x = int(centerX - (width / 2))
                 y = int(centerY - (height / 2))
 
-                # update our list of bounding box coordinates, confidences,
-                # and class IDs
                 boxes.append([x, y, int(width), int(height)])
                 classIDs.append(classID)
                 confidences.append(float(confidence))
                 print(classIDs)
                 
-
-    # apply non-maxima suppression to suppress weak, overlapping bounding
-    # boxes
+    # Use NMS to remove any overlapping boxes
     idxs = cv2.dnn.NMSBoxes(boxes, confidences, confthres,
                             nmsthres)
 
-    # ensure at least one detection exists
     objects = {}
     arr = []
     if len(idxs) > 0:
-        # loop over the indexes we are keeping
         for i in idxs.flatten():
             objects[int(i)] = {}
             objects[int(i)]["Label"] = labels[classIDs[i]]
